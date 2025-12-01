@@ -8,6 +8,18 @@
 extern int cursor_pos;
 extern volatile char key_buffer[256];
 extern volatile int key_buffer_index;
+void print_hex(uint32_t);
+static inline uint16_t read_cs(void) {
+    uint16_t val;
+    asm volatile ("mov %%cs, %0" : "=r"(val));
+    return val;
+}
+
+static inline uint16_t read_ds(void) {
+    uint16_t val;
+    asm volatile ("mov %%ds, %0" : "=r"(val));
+    return val;
+}
 
 int strcmp(const char *a, const char *b)
 {
@@ -40,6 +52,7 @@ void print_welcome()
     print("miniOS shell ready!\npratham/MiniOS> ");
 }
 
+
 void kernel_main()
 {
     // ------------------------
@@ -50,6 +63,11 @@ void kernel_main()
     pic_remap();   // Remap PIC IRQs
     idt_init();    // Load IDT
     keyboard_init(); // Initialize keyboard handler
+    uint16_t cs = read_cs();
+uint16_t ds = read_ds();
+
+
+
     asm volatile("sti"); 
     print_welcome();
 

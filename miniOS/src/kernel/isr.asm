@@ -6,49 +6,52 @@ global isr_keyboard
 global irq_stub
 
 extern idtp
-extern keyboard_handler
+extern keyboard_handler_simple   ; safe C handler (no printing inside)
+                                 ; you will define this in keyboard.c
 
 section .text
 
-; Load the IDT register with address stored in 'idtp' (defined in C)
+; ------------------------------------------------------------
+; Load IDT register
+; ------------------------------------------------------------
 idt_load:
     lidt [idtp]
     ret
 
-; Generic IRQ stub (for unused IRQs)
+
+; ------------------------------------------------------------
+; Generic IRQ stub (IRQ0–IRQ15)
+; Does nothing except acknowledge PIC and return
+; ------------------------------------------------------------
 irq_stub:
     pusha
-    push ds
-    push es
 
-    mov ax, 0x10
-    mov ds, ax
-    mov es, ax
+    ; No segment changes
+    ; No calls
+    ; Safe minimal stub
 
-    pop es
-    pop ds
     popa
 
-    mov al, 0x20
+    mov al, 0x20            ; EOI → Master PIC
     out 0x20, al
     iretd
 
+
+; ------------------------------------------------------------
 ; Keyboard IRQ handler (IRQ1 → 0x21)
+; Safe version:
+;  - No DS/ES loads
+;  - No reloading segments
+;  - No calling print/putchar
+;  - Only reads port 0x60 and pushes into buffer (via C handler)
+; ------------------------------------------------------------
 isr_keyboard:
     pusha
-    push ds
-    push es
 
-    mov ax, 0x10
-    mov ds, ax
-    mov es, ax
+    call keyboard_handler_simple
 
-    call keyboard_handler
-
-    pop es
-    pop ds
     popa
 
-    mov al, 0x20
+    mov al, 0x20            ; EOI → Master PIC
     out 0x20, al
     iretd
