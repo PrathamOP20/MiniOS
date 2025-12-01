@@ -58,24 +58,22 @@ void print_hex(uint32_t val) {
 void idt_init(void) {
     idtp.limit = sizeof(struct idt_entry) * IDT_ENTRIES - 1;
     idtp.base  = (uint32_t)&idt;
-    print("IDT limit: ");
-    print_hex(idtp.limit);
-    print("IDT_Base:");
-    print_hex(idtp.base);
 
-    /* Clear all entries */
-    for (int i = 0; i < IDT_ENTRIES; i++) {
+  
+
+    // Clear IDT
+    for (int i = 0; i < IDT_ENTRIES; i++)
         idt_set_gate(i, 0, 0, 0);
-    }
 
-    /* Map IRQ0–IRQ15 (PIC remapped range 0x20–0x2F) to irq_stub */
-    for (int i = 0; i < 16; i++) {
-        idt_set_gate(0x20 + i, (uint32_t)irq_stub, 0x08, 0x8E);
-    }
+    uint16_t code_sel;
+    asm volatile ("mov %%cs, %0" : "=r"(code_sel));
 
-    /* Overwrite keyboard IRQ (IRQ1 → 0x21) with its actual ISR */
-    idt_set_gate(0x21, (uint32_t)isr_keyboard, 0x08, 0x8E);
+    // PIC IRQs 0x20–0x2F
+    for (int i = 0; i < 16; i++)
+        idt_set_gate(0x20 + i, (uint32_t)irq_stub, code_sel, 0x8E);
 
-    /* Load IDT register (uses lidt [idtp]) */
+    // Keyboard IRQ (IRQ1 -> 0x21)
+    idt_set_gate(0x21, (uint32_t)isr_keyboard, code_sel, 0x8E);
+
     idt_load();
 }
