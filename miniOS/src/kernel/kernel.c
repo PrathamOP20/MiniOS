@@ -41,11 +41,14 @@ int strncmp(const char *a, const char *b, int n)
     return 0;
 }
 
-void clear_screen()
-{
+void clear_screen() {
     for (int i = 0; i < 80 * 25; i++)
         ((uint16_t *)0xB8000)[i] = 0x0F00;
+
+    cursor_pos = 0;
+    update_cursor(cursor_pos);
 }
+
 
 void print_welcome()
 {
@@ -70,6 +73,8 @@ uint16_t ds = read_ds();
 
     asm volatile("sti"); 
     print_welcome();
+update_cursor(cursor_pos);
+
 
     char buffer[256];
     int index = 0;

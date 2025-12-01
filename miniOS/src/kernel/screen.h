@@ -3,5 +3,7 @@
 
 void print(const char* str);
 void putchar(char c);
+void update_cursor(int pos);
+
 
 #endif
